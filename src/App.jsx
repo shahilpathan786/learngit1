@@ -1,61 +1,149 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import "./App.css";
+import { useState, useEffect } from "react";
+import "./App.css"
 
+export default function BirthdayFireworks() {
+  const [rocketLaunched, setRocketLaunched] = useState(false);
+  const [explode, setExplode] = useState(false);
+  const [showText, setShowText] = useState(false);
 
-export default function BirthdayWish() {
-  const [showMessage, setShowMessage] = useState(false);
-  const [showImage, setShowImage] = useState(false);
-
-  const text = "Happy Birthday Sister!";
+  useEffect(() => {
+    if (rocketLaunched) {
+      setTimeout(() => setExplode(true), 1800);
+      setTimeout(() => setShowText(true), 3200);
+    }
+  }, [rocketLaunched]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-200 via-purple-200 to-blue-200 p-6">
-      <div className="text-center">
-        {!showMessage && (
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-6 py-3 rounded-xl bg-purple-600 text-white font-semibold shadow-md hover:bg-purple-700 transition-all"
-            onClick={() => setShowMessage(true)}
-          >
-            Open Surprise 🎁
-          </motion.button>
-        )}
+    <div className="relative w-full h-screen bg-black overflow-hidden flex items-center justify-center text-white">
+      {!rocketLaunched && (
+        <button
+          className="absolute top-5 px-6 py-3 bg-pink-600 rounded-xl text-xl font-bold z-50 hover:bg-pink-700"
+          onClick={() => setRocketLaunched(true)}
+        >
+          Launch Rocket 🚀
+        </button>
+      )}
 
-        {/* LETTER BY LETTER ANIMATION */}
-        {showMessage && (
-          <div className="mt-6 text-8xl font-extrabold bg-gradient-to-r from-pink-500 via-purple-600 to-blue-500 text-transparent bg-clip-text drop-shadow-[0_0_20px_rgba(255,0,255,0.6)] animate-pulse tracking-widest">
-            {text.split("").map((char, i) => (
-              <motion.span
-                className="mx-1 hover:scale-150 inline-block transition-transform duration-200"
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                onAnimationComplete={() => {
-                  if (i === text.length - 1) {
-                    setTimeout(() => setShowImage(true), 800);
-                  }
-                }}
-              >
-                {char}
-              </motion.span>
-            ))}
-          </div>
-        )}
+      {/* Background Fireworks */}
+      <BackgroundFireworks />
 
-        {/* IMAGE FROM BOTTOM TO CENTER */}
-        {showImage && (
-          <motion.img
-            src="/sister-photo.jpg" // Put your sister photo in public folder
-            initial={{ opacity: 0, y: 200 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mx-auto mt-10 w-60 h-60 object-cover rounded-2xl shadow-xl border-4 border-white"
-          />
-        )}
-      </div>
+      {/* Rocket */}
+      {rocketLaunched && !explode && <Rocket />}
+          
+
+      {/* Explosion */}
+      {explode && <BigExplosion />}    
+
+      {/* Text */}
+      {showText && (
+        <div className="absolute text-center fade-in">
+          <h1 className="text-6xl font-extrabold text-pink-400 drop-shadow-2xl">HAPPY BIRTHDAY ZOYA🎉</h1>
+        </div>
+      )}
+
+      <style>{`
+        .rocket {
+          position: absolute;
+          bottom: -80px;
+          animation: launch 2s linear forwards;
+        }
+        @keyframes launch {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-120vh); }
+        }
+
+        .particle {
+          position: absolute;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: white;
+          animation: explode 1.2s ease-out forwards;
+        }
+        @keyframes explode {
+          0% { transform: translate(0,0) scale(1); opacity: 1; }
+          100% { transform: translate(var(--x), var(--y)) scale(0.2); opacity: 0; }
+        }
+
+        .fade-in { animation: fadein 2s forwards; }
+        @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Background fireworks */
+        .bg-firework {
+          position: absolute;
+          width: 5px;
+          height: 5px;
+          background: white;
+          border-radius: 50%;
+          animation: bg-burst 2s infinite;
+        }
+        @keyframes bg-burst {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(20); opacity: 0; }
+        }
+      `}</style>
     </div>
+  );
+}
+
+// Rocket Component
+function Rocket() {
+  return (
+    <div className="rocket">
+      <div className="w-6 h-10 bg-red-600 mx-auto rounded-t-lg"></div>
+      <div className="w-4 h-4 bg-yellow-300 mx-auto animate-ping"></div>
+    </div>
+  );
+}
+
+// Explosion Component
+function BigExplosion() {
+  const particles = Array.from({ length: 40 });
+
+  return (
+    <div className="absolute w-1 h-1">
+      {particles.map((_, i) => {
+        const angle = (i / particles.length) * Math.PI * 2;
+        const distance = 150;
+        return (
+          <div
+            key={i}
+            className="particle"
+            style={{
+              "--x": `${Math.cos(angle) * distance}px`,
+              "--y": `${Math.sin(angle) * distance}px`,
+              background: randomColor(),
+            }}
+          ></div>
+        );
+      })}
+    </div>
+  );
+}
+
+function randomColor() {
+  const colors = ["#ff4d4d", "#4dd2ff", "#ffff66", "#ff66ff", "#66ff66"];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
+// Background fireworks
+function BackgroundFireworks() {
+  const sparks = Array.from({ length: 12 });
+
+  return (
+    <>
+      {sparks.map((_, i) => (
+        <div
+          key={i}
+          className="bg-firework"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 2}s`,
+            background: randomColor(),
+          }}
+        ></div>
+      ))}
+    </>
   );
 }
