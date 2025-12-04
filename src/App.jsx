@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css"
-
 export default function BirthdayFireworks() {
   const [rocketLaunched, setRocketLaunched] = useState(false);
   const [explode, setExplode] = useState(false);
@@ -8,8 +7,12 @@ export default function BirthdayFireworks() {
 
   useEffect(() => {
     if (rocketLaunched) {
-      setTimeout(() => setExplode(true), 1800);
-      setTimeout(() => setShowText(true), 3200);
+      const t1 = setTimeout(() => setExplode(true), 1800);
+      const t2 = setTimeout(() => setShowText(true), 3200);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
   }, [rocketLaunched]);
 
@@ -27,60 +30,74 @@ export default function BirthdayFireworks() {
       {/* Background Fireworks */}
       <BackgroundFireworks />
 
-      {/* Rocket */}
+      {/* Rocket (visible while launched but before explode) */}
       {rocketLaunched && !explode && <Rocket />}
-          
 
       {/* Explosion */}
-      {explode && <BigExplosion />}    
+      {explode && <BigExplosion />}
 
       {/* Text */}
       {showText && (
-        <div className="absolute text-center fade-in">
-          <h1 className="text-6xl font-extrabold text-pink-400 drop-shadow-2xl">HAPPY BIRTHDAY ZOYA🎉</h1>
+        <div className="absolute text-center fade-in z-40">
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-extrabold text-pink-400 drop-shadow-2xl">
+            HAPPY BIRTHDAY ZOYA🎉
+          </h1>
         </div>
       )}
 
       <style>{`
+        /* Rocket launch */
         .rocket {
           position: absolute;
-          bottom: -80px;
-          animation: launch 2s linear forwards;
+          bottom: -120px;
+          left: 50%;
+          transform: translateX(-50%);
+          animation: launch 1.9s ease-out forwards;
+          z-index: 30;
         }
         @keyframes launch {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(-120vh); }
+          0% { transform: translateX(-50%) translateY(0); }
+          100% { transform: translateX(-50%) translateY(-120vh); }
         }
 
+        /* Explosion particle */
         .particle {
           position: absolute;
           width: 8px;
           height: 8px;
           border-radius: 50%;
           background: white;
-          animation: explode 1.2s ease-out forwards;
+          animation: explode 1.6s ease-out forwards;
         }
         @keyframes explode {
           0% { transform: translate(0,0) scale(1); opacity: 1; }
+          70% { opacity: 1; }
           100% { transform: translate(var(--x), var(--y)) scale(0.2); opacity: 0; }
         }
 
-        .fade-in { animation: fadein 2s forwards; }
-        @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+        /* Fade-in text */
+        @keyframes fadein {
+          0% { opacity: 0; transform: scale(0.6); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .fade-in { animation: fadein 1s ease-out forwards; }
 
         /* Background fireworks */
         .bg-firework {
           position: absolute;
-          width: 5px;
-          height: 5px;
+          width: 6px;
+          height: 6px;
           background: white;
           border-radius: 50%;
-          animation: bg-burst 2s infinite;
+          animation: bg-burst 2.4s infinite;
+          opacity: 0.95;
         }
         @keyframes bg-burst {
           0% { transform: scale(1); opacity: 1; }
+          60% { opacity: 0.9; }
           100% { transform: scale(20); opacity: 0; }
         }
+
       `}</style>
     </div>
   );
@@ -90,8 +107,11 @@ export default function BirthdayFireworks() {
 function Rocket() {
   return (
     <div className="rocket">
-      <div className="w-6 h-10 bg-red-600 mx-auto rounded-t-lg"></div>
-      <div className="w-4 h-4 bg-yellow-300 mx-auto animate-ping"></div>
+      <div className="w-6 h-12 bg-red-600 mx-auto rounded-t-lg relative">
+        {/* flame */}
+        <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3 h-6 rounded-full" style={{ background: "radial-gradient(circle at 30% 30%, #fff0, #ffec99)" }}></div>
+      </div>
+      <div className="w-4 h-4 bg-yellow-300 mx-auto mt-2 animate-ping"></div>
     </div>
   );
 }
@@ -101,17 +121,19 @@ function BigExplosion() {
   const particles = Array.from({ length: 40 });
 
   return (
-    <div className="absolute w-1 h-1">
+    <div className="absolute left-1/2 top-20 transform -translate-x-1/2 z-40" style={{ width: 0, height: 0 }}>
       {particles.map((_, i) => {
         const angle = (i / particles.length) * Math.PI * 2;
-        const distance = 150;
+        const distance = 160 + Math.random() * 80;
+        const x = Math.cos(angle) * distance;
+        const y = Math.sin(angle) * distance * (0.9 + Math.random() * 0.3);
         return (
           <div
             key={i}
             className="particle"
             style={{
-              "--x": `${Math.cos(angle) * distance}px`,
-              "--y": `${Math.sin(angle) * distance}px`,
+              ['--x']: `${x}px`,
+              ['--y']: `${y}px`,
               background: randomColor(),
             }}
           ></div>
@@ -122,7 +144,7 @@ function BigExplosion() {
 }
 
 function randomColor() {
-  const colors = ["#ff4d4d", "#4dd2ff", "#ffff66", "#ff66ff", "#66ff66"];
+  const colors = ["#ff4d4d", "#ffb84d", "#fff66b", "#66ff66", "#66d9ff", "#c966ff", "#ff66d9"];
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
@@ -138,8 +160,8 @@ function BackgroundFireworks() {
           className="bg-firework"
           style={{
             left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 2}s`,
+            top: `${Math.random() * 80}%`,
+            animationDelay: `${Math.random() * 3}s`,
             background: randomColor(),
           }}
         ></div>
